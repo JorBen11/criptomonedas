@@ -1,117 +1,85 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
-  SafeAreaView,
+  ActivityIndicator,
+  Image,
   ScrollView,
-  StatusBar,
   StyleSheet,
-  Text,
   useColorScheme,
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors} from 'react-native/Libraries/NewAppScreen';
+import Header from './components/Header';
+import Formulario from './components/Formulario';
+import axios from 'axios';
+import Cotizacion from './components/Cotizacion';
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const App = (): React.JSX.Element => {
+  const [moneda, guardarMoneda] = useState('');
+  const [criptomoneda, guardarCriptomoneda] = useState('');
+  const [consultarApi, guardarConsultarApi] = useState(false);
+  const [resultado, guardarResultado] = useState({});
+  const [cargando, guardarCargando] = useState(false);
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
+  useEffect(() => {
+    const cotizarCriptomoneda = async () => {
+      if (consultarApi) {
+        guardarCargando(true);
+        // Consultar la Api para obtener la cotizacion
+        const url = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${criptomoneda}&tsyms=${moneda}`;
+        const cotizacion = await axios.get(url);
+
+        // Ocultar el spinner y mostrar el resultado
+        guardarResultado(cotizacion.data.DISPLAY[criptomoneda][moneda]);
+        guardarConsultarApi(false);
+        guardarCargando(false);
+      }
+    };
+    cotizarCriptomoneda();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [consultarApi]);
+
+  // Mostrar el spinner o el resultado
+  const componente = cargando ? (
+    <ActivityIndicator size="large" color="#5E49E2" />
+  ) : (
+    <Cotizacion resultado={resultado} />
   );
-}
-
-function App(): React.JSX.Element {
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    backgroundColor: isDarkMode ? Colors.Black : Colors.White,
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <ScrollView style={backgroundStyle}>
+      <Header />
+      <Image
+        style={styles.imagen}
+        source={require('./assets/img/cryptomonedas.png')}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <View style={styles.contenido}>
+        <Formulario
+          moneda={moneda}
+          criptomoneda={criptomoneda}
+          guardarMoneda={guardarMoneda}
+          guardarCriptomoneda={guardarCriptomoneda}
+          guardarConsultarApi={guardarConsultarApi}
+        />
+      </View>
+      <View style={{marginTop: 40}}>{componente}</View>
+    </ScrollView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  imagen: {
+    width: '100%',
+    height: 150,
+    marginHorizontal: '2.5%',
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  contenido: {
+    marginHorizontal: '2.5%',
   },
 });
 
